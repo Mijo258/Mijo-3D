@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0e1014" />
+  <title>Mijo 3D — Parametric Part Studio</title>
+  <meta name="description" content="Parametric lamp-shade and 3D part studio with live preview, part scaling, CAD import and print-ready STL export." />
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e1014'/%3E%3Cpath d='M20 22h24l-5 24H25z' fill='%23f5a524'/%3E%3Cpath d='M32 8v8M14 16l5 5M50 16l-5 5' stroke='%23ffd27a' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://unpkg.com" crossorigin />
+  <link rel="stylesheet" href="style.css" />
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar" aria-label="Studio controls">
+      <header class="app-header">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="22" height="22" fill="none">
+              <path d="M9 11h14l-2.8 14H11.8L9 11Z" fill="currentColor" opacity=".92"/>
+              <path d="M16 4v4M5.5 8.5l2.6 2.6M26.5 8.5l-2.6 2.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <h1>Mijo <span>3D</span></h1>
+            <p>Parametric part studio</p>
+          </div>
+        </div>
+        <button type="button" class="icon-btn close-sidebar" id="closeSidebar" aria-label="Close controls">✕</button>
+      </header>
+
+      <nav class="tabs" role="tablist" aria-label="Control panels">
+        <button type="button" class="tab is-active" role="tab" id="tab-design" data-tab="design" aria-selected="true" aria-controls="panel-design">Design</button>
+        <button type="button" class="tab" role="tab" id="tab-import" data-tab="import" aria-selected="false" aria-controls="panel-import">Import</button>
+        <button type="button" class="tab" role="tab" id="tab-view" data-tab="view" aria-selected="false" aria-controls="panel-view">View</button>
+      </nav>
+
+      <div class="panel-scroll" id="panelScroll">
+
+        <!-- ============================ DESIGN ============================ -->
+        <section class="tab-panel is-active" id="panel-design" role="tabpanel" aria-labelledby="tab-design">
+          <div class="section-title">Part preset</div>
+          <div class="preset-grid" id="presetGrid"></div>
+
+          <div class="section-title">Dimensions</div>
+
+          <div class="control-group">
+            <div class="control-header"><label for="height">Height</label><output id="v-height" for="height">180 mm</output></div>
+            <input type="range" id="height" min="60" max="300" step="1" value="180" aria-label="Height in millimeters" />
+          </div>
+
+          <div class="control-group">
+            <div class="control-header"><label for="rBot">Bottom radius</label><output id="v-rBot" for="rBot">75 mm</output></div>
+            <input type="range" id="rBot" min="25" max="150" step="1" value="75" aria-label="Bottom radius in millimeters" />
+          </div>
+
+          <div class="control-group">
+            <div class="control-header"><label for="rTop">Top radius</label><output id="v-rTop" for="rTop">55 mm</output></div>
+            <input type="range" id="rTop" min="20" max="150" step="1" value="55" aria-label="Top radius in millimeters" />
+          </div>
+
+          <div class="control-group">
+            <div class="control-header"><label for="bulge">Belly bulge</label><output id="v-bulge" for="bulge">+20 mm</output></div>
+            <input type="range" id="bulge" min="-40" max="60" step="1" value="20" aria-label="Belly bulge in millimeters" />
+          </div>
+
+          <div class="control-group">
+            <div class="control-header"><label for="scale">Model scale</label><output id="v-scale" for="scale">100%</output></div>
+            <input type="range" id="scale" min="20" max="400" step="5" value="100" aria-label="Model scale percentage" />
+          </div>
+
+          <div class="section-title">Pattern &amp; twist</div>
+
+          <div class="control-group">
+            <div class="control-header"><label for="ribs">Vertical ribs</label><output id="v-ribs" for="ribs">28</output></div>
+            <input type="range" id="ribs" min="0" max="80" step="1" value="28" aria-label="Number of vertical ribs" />
+          </div>
+
+          <div class="control-group">
+            <div class="control-header"><label for="ribDepth">Rib depth</label><output id="v-ribDepth" for="ribDepth">4.5 mm</output></div>
+            <input type="range" id="ribDepth" min="0" max="18" step="0.5" value="4.5" aria-label="Rib depth in millimeters" />
+          </div>
+
+          <div class="control-group">
+            <div class="control-header"><label for="twist">Spiral twist</label><output id="v-twist" for="twist">120°</output></div>
+            <input type="range" id="twist" min="-360" max="360" step="5" value="120" aria-label="Spiral twist in degrees" />
+          </div>
+
+          <div class="control-group">
+            <div class="control-header"><label for="vFreq">Vertical wave frequency</label><output id="v-vFreq" for="vFreq">2.0</output></div>
+            <input type="range" id="vFreq" min="1" max="10" step="0.5" value="2" aria-label="Vertical wave frequency" />
+          </div>
+
+          <div class="control-group">
+            <div class="control-header"><label for="vAmp">Vertical wave amount</label><output id="v-vAmp" for="vAmp">4.0 mm</output></div>
+            <input type="range" id="vAmp" min="0" max="25" step="0.5" value="4" aria-label="Vertical wave amount in millimeters" />
+          </div>
+
+          <div class="section-title">Print &amp; hardware</div>
+
+          <div class="control-group">
+            <div class="control-header"><label for="printMode">Build mode</label></div>
+            <select id="printMode" aria-label="Build mode">
+              <option value="shell">Hollow shell + fitter</option>
+              <option value="vase">Vase mode surface</option>
+            </select>
+          </div>
+
+          <div id="shellOptions">
+            <div class="control-group">
+              <div class="control-header"><label for="wall">Wall thickness</label><output id="v-wall" for="wall">1.6 mm</output></div>
+              <input type="range" id="wall" min="0.8" max="4" step="0.2" value="1.6" aria-label="Wall thickness in millimeters" />
+            </div>
+
+            <div class="control-group">
+              <div class="control-header"><label for="socketPreset">Socket fitter</label></div>
+              <select id="socketPreset" aria-label="Socket fitter preset">
+                <option value="41">E26 / E27 ring — 41 mm ID</option>
+                <option value="29">E14 / E12 ring — 29 mm ID</option>
+                <option value="60">LED puck cutout — 60 mm ID</option>
+                <option value="0">Open top — no fitter</option>
+              </select>
+            </div>
+
+            <div class="control-group">
+              <div class="control-header"><label for="spokes">Support spokes</label><output id="v-spokes" for="spokes">4</output></div>
+              <input type="range" id="spokes" min="3" max="8" step="1" value="4" aria-label="Number of support spokes" />
+            </div>
+          </div>
+
+          <label class="checkbox-row">
+            <input type="checkbox" id="closeBottom" />
+            <span>Close bottom (vessel / planter)</span>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" id="closeTop" />
+            <span>Close top</span>
+          </label>
+
+          <p class="inline-hint" id="modeHint">Hollow shell exports a watertight wall with a socket fitter.</p>
+        </section>
+
+        <!-- ============================ IMPORT ============================ -->
+        <section class="tab-panel" id="panel-import" role="tabpanel" aria-labelledby="tab-import" hidden>
+          <div class="section-title">Add a part</div>
+
+          <button type="button" class="dropzone" id="dropzone">
+            <span class="dropzone-icon" aria-hidden="true">＋</span>
+            <span class="dropzone-title">Drop files or tap to browse</span>
+            <span class="dropzone-sub">STL · OBJ · PLY · GLB / GLTF · 3MF · FBX · DAE · DXF · STEP / IGES</span>
+          </button>
+
+          <div class="inline-links">
+            <button type="button" class="link-btn" id="formatHelpBtn">Format guide &amp; DWG conversion</button>
+          </div>
+
+          <div class="section-title">Import options</div>
+
+          <label class="checkbox-row">
+            <input type="checkbox" id="autoFit" checked />
+            <span>Auto-fit each part to studio size</span>
+          </label>
+
+          <div class="control-group">
+            <div class="control-header"><label for="importSize">Target size</label><output id="v-importSize" for="importSize">140 mm</output></div>
+            <input type="range" id="importSize" min="40" max="300" step="5" value="140" aria-label="Target imported part size in millimeters" />
+          </div>
+
+          <div class="control-group">
+            <div class="control-header"><label for="importUnits">File units</label></div>
+            <select id="importUnits" aria-label="Units for imported files" disabled>
+              <option value="auto">Auto (from file)</option>
+              <option value="mm">Millimeters</option>
+              <option value="cm">Centimeters</option>
+              <option value="in">Inches</option>
+            </select>
+          </div>
+
+          <label class="checkbox-row">
+            <input type="checkbox" id="layFlat" checked />
+            <span>Lay 2D drawings flat on the bed</span>
+          </label>
+
+          <div class="section-title with-count">
+            <span>Imported parts</span>
+            <span class="count-pill" id="importCount">0</span>
+          </div>
+
+          <div class="import-list" id="importList">
+            <div class="empty-state" id="importEmpty">
+              No imported parts yet.<br />
+              Drop a mesh or CAD file above to add one.
+            </div>
+          </div>
+
+          <div class="note-card">
+            <strong>DWG / DWF</strong>
+            <p>Browsers cannot read proprietary DWG binary safely. Convert once to DXF, then drop the DXF here. <button type="button" class="link-btn" id="dwgHelpBtn">Show commands</button></p>
+          </div>
+
+          <div class="note-card">
+            <strong>STEP / IGES</strong>
+            <p>Read on demand by an OpenCascade WASM kernel. The first use downloads roughly 10&nbsp;MB; later loads are cached.</p>
+          </div>
+
+          <div class="note-card subtle">
+            <strong>Units tip</strong>
+            <p>Leave auto-fit on and every part is scaled to the target size. Turn it off if you need true dimensions from the file.</p>
+          </div>
+        </section>
+
+        <!-- ============================= VIEW ============================= -->
+        <section class="tab-panel" id="panel-view" role="tabpanel" aria-labelledby="tab-view" hidden>
+          <div class="section-title">Scene</div>
+
+          <label class="checkbox-row">
+            <input type="checkbox" id="showDesign" checked />
+            <span>Show parametric design</span>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" id="bulbToggle" checked />
+            <span>Warm LED bulb preview</span>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" id="wireframeToggle" />
+            <span>Wireframe</span>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" id="gridToggle" checked />
+            <span>Grid &amp; print bed</span>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" id="shadowToggle" checked />
+            <span>Soft shadows</span>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" id="autoRotateToggle" />
+            <span>Auto-rotate</span>
+          </label>
+
+          <div class="section-title">Camera</div>
+          <div class="button-row">
+            <button type="button" class="btn secondary" id="fitBtn">Fit view</button>
+            <button type="button" class="btn secondary" id="resetViewBtn">Reset view</button>
+          </div>
+          <div class="button-row">
+            <button type="button" class="btn secondary" id="fullscreenBtn">Fullscreen</button>
+            <button type="button" class="btn secondary danger-outline" id="resetAllBtn">Reset all</button>
+          </div>
+
+          <div class="keyboard-hints">
+            <p><kbd>F</kbd> fit · <kbd>G</kbd> grid · <kbd>R</kbd> reset view · <kbd>W</kbd> wireframe</p>
+          </div>
+
+          <div class="section-title">About</div>
+          <p class="inline-hint">
+            Real-time parametric surfaces are generated in millimeters. Export produces a binary STL of every visible mesh.
+            Press <kbd>?</kbd> for the format guide.
+          </p>
+        </section>
+      </div>
+
+      <footer class="sidebar-footer">
+        <button type="button" class="btn primary" id="exportBtn">
+          <span class="btn-icon" aria-hidden="true">⭳</span>
+          <span>Download print-ready .STL</span>
+        </button>
+        <p class="export-meta" id="exportMeta">Hollow shell · millimeters</p>
+      </footer>
+    </aside>
+
+    <main id="viewport">
+      <div id="canvasHost" aria-hidden="true"></div>
+      <div class="viewport-shade" aria-hidden="true"></div>
+
+      <button type="button" class="icon-btn menu-btn" id="menuBtn" aria-label="Open controls" aria-expanded="false" aria-controls="sidebar">☰</button>
+      <div class="backdrop" id="backdrop" hidden></div>
+
+      <div class="hud" id="hud">
+        <div class="hud-title" id="statsTitle">Pendant · 100%</div>
+        <div class="hud-meta" id="statsMeta">Building…</div>
+      </div>
+
+      <div class="view-toolbar" role="toolbar" aria-label="Viewport actions">
+        <button type="button" class="tool-btn" id="tbFit" title="Fit view (F)" aria-label="Fit view">⤢</button>
+        <button type="button" class="tool-btn is-active" id="tbGrid" title="Toggle grid (G)" aria-label="Toggle grid" aria-pressed="true">▦</button>
+        <button type="button" class="tool-btn" id="tbRotate" title="Toggle auto-rotate" aria-label="Toggle auto-rotate" aria-pressed="false">↻</button>
+        <button type="button" class="tool-btn" id="tbFull" title="Fullscreen" aria-label="Fullscreen">⛶</button>
+      </div>
+
+      <div class="viewport-hint" id="viewportHint">Drag to orbit · scroll / pinch to zoom · right-drag or two fingers to pan</div>
+
+      <div class="drop-overlay" id="dropOverlay" aria-hidden="true">
+        <div class="drop-overlay-inner">
+          <span class="drop-glyph" aria-hidden="true">⬇</span>
+          <strong>Drop CAD or mesh files</strong>
+          <span>STL · OBJ · PLY · GLB · 3MF · FBX · DAE · DXF · STEP · IGES</span>
+        </div>
+      </div>
+
+      <div class="loading-overlay" id="loading" aria-hidden="true">
+        <div class="spinner" aria-hidden="true"></div>
+        <p id="loadingText">Loading…</p>
+      </div>
+
+      <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+    </main>
+  </div>
+
+  <input type="file" id="fileInput" hidden multiple accept=".stl,.obj,.ply,.glb,.gltf,.3mf,.fbx,.dae,.dxf,.dwg,.dwf,.step,.stp,.iges,.igs" />
+
+  <dialog id="infoDialog" class="dialog" aria-labelledby="dialogTitle">
+    <form method="dialog" class="dialog-inner">
+      <div class="dialog-head">
+        <h2 id="dialogTitle">Info</h2>
+        <button type="submit" value="cancel" class="icon-btn" aria-label="Close dialog">✕</button>
+      </div>
+      <div class="dialog-body" id="dialogBody"></div>
+      <div class="dialog-actions">
+        <button type="button" class="btn secondary" id="dialogChooseFile">Choose a file</button>
+        <button type="submit" value="ok" class="btn primary">Got it</button>
+      </div>
+    </form>
+  </dialog>
+
+  <noscript>
+    <div class="noscript">This studio needs JavaScript and WebGL enabled to render 3D parts.</div>
+  </noscript>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

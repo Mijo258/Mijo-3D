@@ -1,0 +1,13 @@
+{
+  "name": "random",
+  "version": "1.0.0",
+  "description": "A zero-build, browser-based 3D part studio for lamp shades and other printable parts. It renders a live parametric design, imports CAD/mesh files, scales each part, and exports a print-ready binary STL.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
